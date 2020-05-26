@@ -23,7 +23,6 @@ void USnowInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	if (snowComponent && currentLocation != LastLocation)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *hitUVs.ToString());
 		snowComponent->DrawMaterial(hitUVs, HoleTexture, HoleScale);
 		LastLocation = currentLocation;
 	}
