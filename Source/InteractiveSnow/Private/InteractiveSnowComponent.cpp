@@ -2,7 +2,6 @@
 
 
 #include "InteractiveSnowComponent.h"
-#include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetRenderingLibrary.h"
 
 
@@ -33,7 +32,8 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 	DrawMaterialInstance->SetScalarParameterValue("Scale", TextureScale);
 	DrawMaterialInstance->SetVectorParameterValue("UV Location", FLinearColor(UVs.X, UVs.Y, 0.f, 1.f));
 
-	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), RenderTarget, DrawMaterialInstance);
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), RenderTarget, DrawMaterialInstance); // Actual render target
+	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), PrevRenderTarget, TextureCopyMaterialInstance); // Cached render target
 }
 
 void UInteractiveSnowComponent::BeginPlay()
@@ -42,10 +42,18 @@ void UInteractiveSnowComponent::BeginPlay()
 
 	OwnerActor = GetOwner(); // Need to delay this until BeginPlay so that it works when inherited by blueprints
 
-	RenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, RenderTargetResolution, RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
-	UKismetRenderingLibrary::ClearRenderTarget2D(GetWorld(), RenderTarget);
+	RenderTarget = CreateRenderTarget(RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
+	PrevRenderTarget = CreateRenderTarget(RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
 
 	InitMaterials();
+}
+
+UTextureRenderTarget2D* UInteractiveSnowComponent::CreateRenderTarget(int32 Resolution, ETextureRenderTargetFormat Format)
+{
+	UTextureRenderTarget2D* newRenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, Resolution, Resolution, Format);
+	UKismetRenderingLibrary::ClearRenderTarget2D(GetWorld(), newRenderTarget);
+
+	return newRenderTarget;
 }
 
 void UInteractiveSnowComponent::InitMaterials()
@@ -85,6 +93,19 @@ void UInteractiveSnowComponent::InitMaterials()
 
 	FString renderTargetMaterialName = OwnerActor->GetName() + NAME_SEPARATOR + RenderTargetDrawMaterial->GetName();
 	DrawMaterialInstance = UMaterialInstanceDynamic::Create(RenderTargetDrawMaterial, this, FName(*renderTargetMaterialName));
+	DrawMaterialInstance->SetTextureParameterValue("PreviousRenderTexture", PrevRenderTarget);
+
+	// Create copy render texture material
+
+	if (!RenderTargetCopyMaterial)
+	{
+		LogWarning("Render target copy material is null. Unable to create dynamic material instance.");
+		return;
+	}
+
+	FString copyMaterialName = OwnerActor->GetName() + NAME_SEPARATOR + RenderTargetCopyMaterial->GetName();
+	TextureCopyMaterialInstance = UMaterialInstanceDynamic::Create(RenderTargetCopyMaterial, this, FName(*copyMaterialName));
+	TextureCopyMaterialInstance->SetTextureParameterValue("TextureToCopy", RenderTarget);
 }
 
 void UInteractiveSnowComponent::LogWarning(FString Message)

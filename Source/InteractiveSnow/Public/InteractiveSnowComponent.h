@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "InteractiveSnowComponent.generated.h"
-
-
-class UTextureRenderTarget2D;
 
 
 // This component enables the interaction with snow surfaces. It requires a static mesh component to be present on the actor.
@@ -39,8 +37,20 @@ protected:
 	UPROPERTY()
 	UMaterialInstanceDynamic* DrawMaterialInstance;
 
+	UPROPERTY()
+	UMaterialInstanceDynamic* TextureCopyMaterialInstance;
+
+	UPROPERTY()
+	UTextureRenderTarget2D* PrevRenderTarget;
+
+	UPROPERTY()
+	UTextureRenderTarget2D* RenderTarget;
+
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* BaseMaterial;
+
+	UPROPERTY(EditAnywhere)
+	UMaterialInterface* RenderTargetCopyMaterial;
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* RenderTargetDrawMaterial;
@@ -48,10 +58,18 @@ protected:
 	UPROPERTY(EditAnywhere)
 	int32 RenderTargetResolution = 1024;
 
-	UPROPERTY(EditAnywhere)
-	UTextureRenderTarget2D* RenderTarget;
-
 	virtual void BeginPlay() override;
+
+	/**
+	* Creates and initializes a new render target texture of the given resolution and format
+	*
+	* @param Resolution - Pixel resolution in X and Y
+	* @param Format - Format to use for this render target
+	*
+	* @return New initialized render target
+	*/
+	UFUNCTION(BlueprintCallable)
+	UTextureRenderTarget2D* CreateRenderTarget(int32 Resolution, ETextureRenderTargetFormat Format);
 
 	/**
 	* Initializes dynamic material instance for this actor, and the material for the render target
