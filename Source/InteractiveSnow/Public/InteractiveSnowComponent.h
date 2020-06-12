@@ -9,6 +9,7 @@
 
 
 // This component enables the interaction with snow surfaces. It requires a static mesh component to be present on the actor.
+// NOTE: Requires 0-1 UVs
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class INTERACTIVESNOW_API UInteractiveSnowComponent : public UActorComponent
 {
@@ -25,7 +26,7 @@ public:
 	* @param TextureScale - Scale value to apply when drawing on the texture
 	*/
 	UFUNCTION(BlueprintCallable)
-	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, float TextureScale);
+	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale);
 
 protected:
 	UPROPERTY()

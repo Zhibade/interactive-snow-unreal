@@ -15,7 +15,7 @@ UInteractiveSnowComponent::UInteractiveSnowComponent(const FObjectInitializer& O
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, float TextureScale)
+void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale)
 {
 	if (!RenderTarget || !DrawMaterialInstance)
 	{
@@ -29,7 +29,8 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 		CurrentShapeTexture = ShapeTexture;
 	}
 
-	DrawMaterialInstance->SetScalarParameterValue("Scale", TextureScale);
+	DrawMaterialInstance->SetScalarParameterValue("Scale X", TextureScale.X);
+	DrawMaterialInstance->SetScalarParameterValue("Scale Y", TextureScale.Y);
 	DrawMaterialInstance->SetVectorParameterValue("UV Location", FLinearColor(UVs.X, UVs.Y, 0.f, 1.f));
 
 	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), RenderTarget, DrawMaterialInstance); // Actual render target

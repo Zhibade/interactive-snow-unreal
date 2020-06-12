@@ -33,7 +33,7 @@ protected:
 	float MaxDistance = 70.f; // Max distance to check from the pivot of the owner actor
 
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0", UIMax = "10"))
-	float HoleScale = 1.f;
+	float HoleSize = 100.f; // Scale in CM
 
 	UPROPERTY(EditAnywhere)
 	UTexture2D* HoleTexture;
@@ -41,12 +41,25 @@ protected:
 	virtual void BeginPlay() override;
 
 	/**
+	* Gets the corresponding UV scale to be used when drawing the material on the surface component.
+	*
+	* @param SizeInCM - Desired size of the hole texture in CM
+	* @param TargetUVLocation - UV coordinates of where the texture will be drawn to.
+	* @param Hit - Line trace hit information used when finding collision
+	*
+	* @return UV scale to apply to the texture (also corrects distortion)
+	*/
+	UFUNCTION(BlueprintCallable)
+	FVector2D GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, const FHitResult& Hit) const;
+
+	/**
 	* Gets the snow component directly under the parent actor and optionally the UVs
 	*
 	* @param OutUVs - Stores the UVs of the hit location in this reference
+	* @param OutHit - Stores the collision hit information in this reference
 	*
 	* @return Snow component or null.
 	*/
 	UFUNCTION(BlueprintCallable)
-	UInteractiveSnowComponent* GetSnowComponentUnderParent(FVector2D& OutUVs) const;
+	UInteractiveSnowComponent* GetSnowComponentUnderParent(FVector2D& OutUVs, FHitResult& Hit) const;
 };
