@@ -19,9 +19,9 @@ public:
 	UInteractiveSnowComponent(const FObjectInitializer& ObjectInitializer);
 
 	/**
-	* Draws in this component's render target at the given UVs, with the given shape texture and scale.
+	* Draws the given shape in this surface using the UV location, texture, and texture scale
 	*
-	* @param UVs - UV location of the drawing
+	* @param UVs - UV location of the hole
 	* @param ShapeTexture - Texture to use when drawing
 	* @param TextureScale - Scale value to apply when drawing on the texture
 	*/
@@ -33,31 +33,63 @@ protected:
 	AActor* OwnerActor = nullptr;
 
 	UPROPERTY()
-	UTexture2D* CurrentShapeTexture;
+	UStaticMeshComponent* StaticMeshComponent = nullptr;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic* DrawMaterialInstance;
+	UTexture2D* CurrentShapeTexture = nullptr;
 
 	UPROPERTY()
-	UMaterialInstanceDynamic* TextureCopyMaterialInstance;
+	UMaterialInstanceDynamic* DynamicMaterial = nullptr;
 
 	UPROPERTY()
-	UTextureRenderTarget2D* PrevRenderTarget;
+	UMaterialInstanceDynamic* DrawMaterialInstance = nullptr;
 
 	UPROPERTY()
-	UTextureRenderTarget2D* RenderTarget;
+	UMaterialInstanceDynamic* TextureCopyMaterialInstance = nullptr;
+
+	UPROPERTY()
+	UTextureRenderTarget2D* PrevRenderTarget = nullptr;
+
+	UPROPERTY()
+	UTextureRenderTarget2D* RenderTarget = nullptr;
+
+
+	// --- INFINITE SURFACE PROPERTIES --- //
+
+	UPROPERTY()
+	float DisplacementTextureScale = 1.f;
+
+	UPROPERTY()
+	float UvPixelSize = 1.f;
+
+	UPROPERTY()
+	FVector2D PrevUvLocation = FVector2D::ZeroVector; // Used for "infinite" surfaces only.
+
+
+	// --- EXPOSED PROPERTIES --- //
+
+	// Toggles optimization for large or "infinite" surfaces. NOTE: It is intended for plane-like surfaces mostly.
+	UPROPERTY(EditAnywhere)
+	bool bInfiniteSurface = false;
+
+	// Active render area when using an "infinite" surface. Centimeters.
+	UPROPERTY(EditAnywhere)
+	float InfiniteSurfaceRenderArea = 2000.f;
 
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* BaseMaterial;
+	UMaterialInterface* BaseMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* RenderTargetCopyMaterial;
+	UMaterialInterface* RenderTargetCopyMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere)
-	UMaterialInterface* RenderTargetDrawMaterial;
+	UMaterialInterface* RenderTargetDrawMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	int32 RenderTargetResolution = 1024;
+
+
+	// --- FUNCTIONS / METHODS --- //
 
 	virtual void BeginPlay() override;
 
@@ -71,6 +103,17 @@ protected:
 	*/
 	UFUNCTION(BlueprintCallable)
 	UTextureRenderTarget2D* CreateRenderTarget(int32 Resolution, ETextureRenderTargetFormat Format);
+
+	/**
+	* Returns the appropiate displacement texture scale according to the given parameters
+	*
+	* @param RenderSize - Render size of the displacement area in CM
+	* @param bIsInfiniteSurface - Whether surface is infinite or not
+	*
+	* @return Uniform texture scale to apply to the displacement texture
+	*/
+	UFUNCTION(BlueprintCallable)
+	float GetDisplacementTextureScale(float RenderSize, bool bIsInfiniteRenderSurface) const;
 
 	/**
 	* Initializes dynamic material instance for this actor, and the material for the render target

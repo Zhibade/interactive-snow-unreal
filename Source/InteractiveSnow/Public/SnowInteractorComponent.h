@@ -26,6 +26,9 @@ protected:
 	UPROPERTY()
 	FVector LastLocation = FVector::ZeroVector;
 
+
+	// --- EXPOSED PROPERTIES --- //
+
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0", UIMax = "10"))
 	float TickInterval = 0.05f;
 
@@ -37,6 +40,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UTexture2D* HoleTexture;
+
+
+	// --- FUNCTIONS / METHODS --- //
 
 	virtual void BeginPlay() override;
 

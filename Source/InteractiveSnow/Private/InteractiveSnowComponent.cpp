@@ -5,7 +5,13 @@
 #include "Kismet/KismetRenderingLibrary.h"
 
 
+const FName LOCATION_PARAMETER_NAME = "UV Location";
+const FName SCALE_X_PARAMETER_NAME = "Scale X";
+const FName SCALE_Y_PARAMETER_NAME = "Scale Y";
+const FName PREV_OFFSET_X_PARAMETER_NAME = "Previous Texture Offset X";
+const FName PREV_OFFSET_Y_PARAMETER_NAME = "Previous Texture Offset Y";
 const FName RENDER_TARGET_PARAMETER_NAME = "Displacement Map";
+
 const FString NAME_SEPARATOR = TEXT("_");
 const FString WARNING_HEADER = TEXT("WARNING :: [Interactive Snow Component] ::");
 
@@ -17,6 +23,8 @@ UInteractiveSnowComponent::UInteractiveSnowComponent(const FObjectInitializer& O
 
 void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale)
 {
+	// General setup and checks
+
 	if (!RenderTarget || !DrawMaterialInstance)
 	{
 		LogWarning("Either render target or the draw material instance is null. Unable to draw material on render target.");
@@ -29,9 +37,47 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 		CurrentShapeTexture = ShapeTexture;
 	}
 
-	DrawMaterialInstance->SetScalarParameterValue("Scale X", TextureScale.X);
-	DrawMaterialInstance->SetScalarParameterValue("Scale Y", TextureScale.Y);
-	DrawMaterialInstance->SetVectorParameterValue("UV Location", FLinearColor(UVs.X, UVs.Y, 0.f, 1.f));
+	FVector2D drawMaterialScale = TextureScale;
+
+	// Infinite / non-infinite specific setup
+	/// Non-infinite just uses the regular 0-1 UV space
+	/// Infinite only applies the displacement to a specific area around the player / interactor object
+
+	if (!bInfiniteSurface)
+	{
+		DrawMaterialInstance->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(UVs.X, UVs.Y, 0.f, 1.f));
+	}
+	else
+	{
+		// Scale render target texture to an area around the object/player (already calculated during BeginPlay).
+
+		DynamicMaterial->SetScalarParameterValue(SCALE_X_PARAMETER_NAME, DisplacementTextureScale);
+		DynamicMaterial->SetScalarParameterValue(SCALE_Y_PARAMETER_NAME, DisplacementTextureScale);
+
+		// For infinite we move the cached texture instead of the object/player.
+		/// Need to move texture in discrete steps to prevent blurring, by making it match with the texture pixels.
+
+		FVector2D discreteUVs = FVector2D(FMath::RoundToFloat(UVs.X / UvPixelSize) * UvPixelSize, FMath::RoundToFloat(UVs.Y / UvPixelSize) * UvPixelSize);
+		FVector2D distMoved = (discreteUVs - PrevUvLocation) * (1.f / DisplacementTextureScale); // The smaller the area, the more we have to offset to match real size area
+
+		DynamicMaterial->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(discreteUVs.X, discreteUVs.Y, 0.f, 1.f));
+		DrawMaterialInstance->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(0.5f, 0.5f, 0.f, 1.f)); // Always in the center since we are moving cached texture instead
+		DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_X_PARAMETER_NAME, distMoved.X);
+		DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_Y_PARAMETER_NAME, distMoved.Y);
+
+		PrevUvLocation = discreteUVs;
+
+		// Prevent double scaling of draw material by scaling it up
+
+		drawMaterialScale *= 1.f / DisplacementTextureScale;
+	}
+
+	// Apply common parameters
+
+	DrawMaterialInstance->SetScalarParameterValue(SCALE_X_PARAMETER_NAME, drawMaterialScale.X);
+	DrawMaterialInstance->SetScalarParameterValue(SCALE_Y_PARAMETER_NAME, drawMaterialScale.Y);
+
+	// Draw on render targets
 
 	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), RenderTarget, DrawMaterialInstance); // Actual render target
 	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), PrevRenderTarget, TextureCopyMaterialInstance); // Cached render target
@@ -47,23 +93,48 @@ void UInteractiveSnowComponent::BeginPlay()
 	PrevRenderTarget = CreateRenderTarget(RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
 
 	InitMaterials();
+
+	UvPixelSize = 1.f / RenderTargetResolution;
+
+	if (bInfiniteSurface)
+	{
+		DisplacementTextureScale = GetDisplacementTextureScale(InfiniteSurfaceRenderArea, bInfiniteSurface);
+	}
 }
 
 UTextureRenderTarget2D* UInteractiveSnowComponent::CreateRenderTarget(int32 Resolution, ETextureRenderTargetFormat Format)
 {
 	UTextureRenderTarget2D* newRenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, Resolution, Resolution, Format);
+	newRenderTarget->AddressX = TextureAddress::TA_Clamp;
+	newRenderTarget->AddressY = TextureAddress::TA_Clamp;
+	newRenderTarget->bAutoGenerateMips = false;
+
 	UKismetRenderingLibrary::ClearRenderTarget2D(GetWorld(), newRenderTarget);
 
 	return newRenderTarget;
 }
 
+float UInteractiveSnowComponent::GetDisplacementTextureScale(float RenderSize, bool bIsInfiniteRenderSurface) const
+{
+	if (!bIsInfiniteRenderSurface)
+	{
+		return 1.f;
+	}
+
+	FVector extents = StaticMeshComponent->GetStaticMesh()->GetBoundingBox().GetExtent();
+	float largestSize = FMath::Max(extents.X, extents.Y) * 2.f;
+
+	// We assume that UVs 0-1 space covers the largest axis.
+	return FMath::Min(RenderSize / largestSize, 1.f); // Can't go over 0-1 space
+}
+
 void UInteractiveSnowComponent::InitMaterials()
 {
-	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(OwnerActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+	StaticMeshComponent = Cast<UStaticMeshComponent>(OwnerActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 
 	// Exit early if actor doesn't have a static mesh component 
 
-	if (!meshComponent)
+	if (!StaticMeshComponent)
 	{
 		LogWarning("No mesh component found on actor: " + OwnerActor->GetActorLabel() + ". Unable to initialize material.");
 		return;
@@ -73,16 +144,16 @@ void UInteractiveSnowComponent::InitMaterials()
 
 	if (!BaseMaterial)
 	{
-		BaseMaterial = meshComponent->GetMaterial(0);
+		BaseMaterial = StaticMeshComponent->GetMaterial(0);
 	}
 
 	// Create dynamic material and assign it to the static mesh component
 
 	FString materialName = OwnerActor->GetName() + NAME_SEPARATOR + BaseMaterial->GetName();
-	UMaterialInstanceDynamic* dynamicMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this, FName(*materialName));
-	dynamicMaterial->SetTextureParameterValue(RENDER_TARGET_PARAMETER_NAME, RenderTarget);
+	DynamicMaterial = UMaterialInstanceDynamic::Create(BaseMaterial, this, FName(*materialName));
+	DynamicMaterial->SetTextureParameterValue(RENDER_TARGET_PARAMETER_NAME, RenderTarget);
 
-	meshComponent->SetMaterial(0, dynamicMaterial);
+	StaticMeshComponent->SetMaterial(0, DynamicMaterial);
 
 	// Create material for drawing on the render target as well
 
