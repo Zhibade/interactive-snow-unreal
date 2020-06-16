@@ -29,6 +29,9 @@ protected:
 
 	// --- EXPOSED PROPERTIES --- //
 
+	UPROPERTY(EditAnywhere)
+	bool bIsActivePlayer = false;
+
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0", UIMax = "10"))
 	float TickInterval = 0.05f;
 

@@ -19,14 +19,16 @@ public:
 	UInteractiveSnowComponent(const FObjectInitializer& ObjectInitializer);
 
 	/**
-	* Draws the given shape in this surface using the UV location, texture, and texture scale
+	* Draws the given shape in this surface using the UV location, texture, and texture scale.
+	* When it is an infinite surface, it requires an additional parameter that indicates the main player/object.
 	*
 	* @param UVs - UV location of the hole
 	* @param ShapeTexture - Texture to use when drawing
 	* @param TextureScale - Scale value to apply when drawing on the texture
+	* @param bIsMainPlayer - Indicates whether this is the main player/object or not (only relevant when it is set as infinite)
 	*/
 	UFUNCTION(BlueprintCallable)
-	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale);
+	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, bool bIsMainPlayer = false);
 
 protected:
 	UPROPERTY()
@@ -114,6 +116,17 @@ protected:
 	*/
 	UFUNCTION(BlueprintCallable)
 	float GetDisplacementTextureScale(float RenderSize, bool bIsInfiniteRenderSurface) const;
+
+	/**
+	* Takes an UV location and makes it pixel perfect.
+	*
+	* @param UVs - UV location to make pixel perfect
+	* @param PixelSize - Pixel size that correspond to the given UVs
+	*
+	* @return Same UV location but pixel perfect (matching texture pixels)
+	*/
+	UFUNCTION(BlueprintCallable)
+	FVector2D GetPixelPerfectUvLocation(FVector2D UVs, float PixelSize) const;
 
 	/**
 	* Initializes dynamic material instance for this actor, and the material for the render target

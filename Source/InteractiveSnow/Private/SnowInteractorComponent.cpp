@@ -30,7 +30,7 @@ void USnowInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	if (snowComponent && currentLocation != LastLocation)
 	{
 		FVector2D uvScale = GetHoleUvScale(HoleSize, hitUVs, hit);
-		snowComponent->DrawMaterial(hitUVs, HoleTexture, uvScale);
+		snowComponent->DrawMaterial(hitUVs, HoleTexture, uvScale, bIsActivePlayer);
 
 		LastLocation = currentLocation;
 	}

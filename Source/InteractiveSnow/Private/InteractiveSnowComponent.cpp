@@ -21,7 +21,7 @@ UInteractiveSnowComponent::UInteractiveSnowComponent(const FObjectInitializer& O
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale)
+void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, bool bIsMainPlayer)
 {
 	// General setup and checks
 
@@ -49,27 +49,44 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 	}
 	else
 	{
-		// Scale render target texture to an area around the object/player (already calculated during BeginPlay).
-
-		DynamicMaterial->SetScalarParameterValue(SCALE_X_PARAMETER_NAME, DisplacementTextureScale);
-		DynamicMaterial->SetScalarParameterValue(SCALE_Y_PARAMETER_NAME, DisplacementTextureScale);
-
-		// For infinite we move the cached texture instead of the object/player.
-		/// Need to move texture in discrete steps to prevent blurring, by making it match with the texture pixels.
-
-		FVector2D discreteUVs = FVector2D(FMath::RoundToFloat(UVs.X / UvPixelSize) * UvPixelSize, FMath::RoundToFloat(UVs.Y / UvPixelSize) * UvPixelSize);
-		FVector2D distMoved = (discreteUVs - PrevUvLocation) * (1.f / DisplacementTextureScale); // The smaller the area, the more we have to offset to match real size area
-
-		DynamicMaterial->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(discreteUVs.X, discreteUVs.Y, 0.f, 1.f));
-		DrawMaterialInstance->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(0.5f, 0.5f, 0.f, 1.f)); // Always in the center since we are moving cached texture instead
-		DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_X_PARAMETER_NAME, distMoved.X);
-		DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_Y_PARAMETER_NAME, distMoved.Y);
-
-		PrevUvLocation = discreteUVs;
-
-		// Prevent double scaling of draw material by scaling it up
+		// Prevent double scaling of draw material by applying the inverse scale of the displacement texture
 
 		drawMaterialScale *= 1.f / DisplacementTextureScale;
+
+		if (bIsMainPlayer)
+		{
+			// Scale render target texture to an area around the object/player (already calculated during BeginPlay).
+
+			DynamicMaterial->SetScalarParameterValue(SCALE_X_PARAMETER_NAME, DisplacementTextureScale);
+			DynamicMaterial->SetScalarParameterValue(SCALE_Y_PARAMETER_NAME, DisplacementTextureScale);
+
+			// For infinite we move the cached texture instead of the object/player.
+			/// Need to move texture in discrete steps to prevent blurring, by making it match with the texture pixels.
+
+			FVector2D discreteUVs = GetPixelPerfectUvLocation(UVs, UvPixelSize);
+			FVector2D distMoved = (discreteUVs - PrevUvLocation) * (1.f / DisplacementTextureScale); // The smaller the area, the more we have to offset to match real size area
+
+			DynamicMaterial->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(discreteUVs.X, discreteUVs.Y, 0.f, 1.f));
+			DrawMaterialInstance->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(0.5f, 0.5f, 0.f, 1.f)); // Always in the center since we are moving cached texture instead
+			DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_X_PARAMETER_NAME, distMoved.X);
+			DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_Y_PARAMETER_NAME, distMoved.Y);
+
+			PrevUvLocation = discreteUVs;
+		}
+		else
+		{
+			// Calculate UV distance from main player/object and position shape there (taking displacement map scale into account as well)
+
+			FVector2D discreteUVs = GetPixelPerfectUvLocation(UVs, UvPixelSize);
+			FVector2D uvLocation = (discreteUVs - PrevUvLocation) * (1.f / DisplacementTextureScale);
+			uvLocation = FVector2D(0.5f, 0.5f) + uvLocation; // Main object is always in the middle of the displacement map, so we need to get location from there
+
+			DrawMaterialInstance->SetVectorParameterValue(LOCATION_PARAMETER_NAME, FLinearColor(uvLocation.X, uvLocation.Y, 0.f, 1.f));
+
+			// Force these to 0 always to prevent moving the texture when the main object is not moving
+			DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_X_PARAMETER_NAME, 0.f);
+			DrawMaterialInstance->SetScalarParameterValue(PREV_OFFSET_Y_PARAMETER_NAME, 0.f);
+		}
 	}
 
 	// Apply common parameters
@@ -126,6 +143,11 @@ float UInteractiveSnowComponent::GetDisplacementTextureScale(float RenderSize, b
 
 	// We assume that UVs 0-1 space covers the largest axis.
 	return FMath::Min(RenderSize / largestSize, 1.f); // Can't go over 0-1 space
+}
+
+FVector2D UInteractiveSnowComponent::GetPixelPerfectUvLocation(FVector2D UVs, float PixelSize) const
+{
+	return FVector2D((FMath::FloorToFloat(UVs.X / PixelSize) + 0.5f) * PixelSize, (FMath::FloorToFloat(UVs.Y / PixelSize) + 0.5f) * PixelSize);
 }
 
 void UInteractiveSnowComponent::InitMaterials()
