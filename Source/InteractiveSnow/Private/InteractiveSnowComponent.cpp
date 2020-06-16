@@ -109,9 +109,9 @@ void UInteractiveSnowComponent::BeginPlay()
 	RenderTarget = CreateRenderTarget(RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
 	PrevRenderTarget = CreateRenderTarget(RenderTargetResolution, ETextureRenderTargetFormat::RTF_R16f);
 
-	InitMaterials();
-
 	UvPixelSize = 1.f / RenderTargetResolution;
+
+	InitMaterials();
 
 	if (bInfiniteSurface)
 	{
@@ -188,6 +188,7 @@ void UInteractiveSnowComponent::InitMaterials()
 	FString renderTargetMaterialName = OwnerActor->GetName() + NAME_SEPARATOR + RenderTargetDrawMaterial->GetName();
 	DrawMaterialInstance = UMaterialInstanceDynamic::Create(RenderTargetDrawMaterial, this, FName(*renderTargetMaterialName));
 	DrawMaterialInstance->SetTextureParameterValue("PreviousRenderTexture", PrevRenderTarget);
+	DrawMaterialInstance->SetScalarParameterValue("UV Pixel Size", UvPixelSize);
 
 	// Create copy render texture material
 
