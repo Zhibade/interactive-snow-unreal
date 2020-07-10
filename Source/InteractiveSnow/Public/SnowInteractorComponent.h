@@ -53,13 +53,14 @@ protected:
 	* Gets the corresponding UV scale to be used when drawing the material on the surface component.
 	*
 	* @param SizeInCM - Desired size of the hole texture in CM
-	* @param TargetUVLocation - UV coordinates of where the texture will be drawn to.
+	* @param TargetUVLocation - UV coordinates of where the texture will be drawn to
+	* @param UvChannel - UV channel used for the target UV location
 	* @param Hit - Line trace hit information used when finding collision
 	*
 	* @return UV scale to apply to the texture (also corrects distortion)
 	*/
 	UFUNCTION(BlueprintCallable)
-	FVector2D GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, const FHitResult& Hit) const;
+	FVector2D GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, int32 UvChannel, const FHitResult& Hit) const;
 
 	/**
 	* Gets the snow component directly under the parent actor and optionally the UVs

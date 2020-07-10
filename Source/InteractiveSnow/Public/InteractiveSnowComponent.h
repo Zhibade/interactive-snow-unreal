@@ -9,7 +9,7 @@
 
 
 // This component enables the interaction with snow surfaces. It requires a static mesh component to be present on the actor.
-// NOTE: Requires 0-1 UVs
+// NOTE: Requires 0-1 UVs in UV0, UV1 or UV2
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class INTERACTIVESNOW_API UInteractiveSnowComponent : public UActorComponent
 {
@@ -29,6 +29,14 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable)
 	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, bool bIsMainPlayer = false);
+
+	/**
+	* Returns the used UV channel for this snow component
+	*
+	* @return Used UV channel as an int (UV0 = 0, UV1 = 1, etc)
+	*/
+	UFUNCTION(BlueprintCallable)
+	int32 GetUsedUvChannel() const;
 
 protected:
 	UPROPERTY()
@@ -89,6 +97,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	int32 RenderTargetResolution = 1024;
+
+	UPROPERTY(EditAnywhere)
+	int32 UvChannel = 0;
 
 
 	// --- FUNCTIONS / METHODS --- //

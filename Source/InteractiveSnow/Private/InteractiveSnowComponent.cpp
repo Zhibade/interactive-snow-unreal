@@ -100,6 +100,11 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 	UKismetRenderingLibrary::DrawMaterialToRenderTarget(GetWorld(), PrevRenderTarget, TextureCopyMaterialInstance); // Cached render target
 }
 
+int32 UInteractiveSnowComponent::GetUsedUvChannel() const
+{
+	return UvChannel;
+}
+
 void UInteractiveSnowComponent::BeginPlay()
 {
 	Super::BeginPlay();

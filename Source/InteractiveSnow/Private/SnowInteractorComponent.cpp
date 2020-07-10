@@ -29,7 +29,9 @@ void USnowInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	if (snowComponent && currentLocation != LastLocation)
 	{
-		FVector2D uvScale = GetHoleUvScale(HoleSize, hitUVs, hit);
+		int32 uvChannel = snowComponent->GetUsedUvChannel();
+
+		FVector2D uvScale = GetHoleUvScale(HoleSize, hitUVs, uvChannel, hit);
 		snowComponent->DrawMaterial(hitUVs, HoleTexture, uvScale, bIsActivePlayer);
 
 		LastLocation = currentLocation;
@@ -41,7 +43,7 @@ void USnowInteractorComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
-FVector2D USnowInteractorComponent::GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, const FHitResult& Hit) const
+FVector2D USnowInteractorComponent::GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, int32 UvChannel, const FHitResult& Hit) const
 {
 	// Use two other locations on the surface to determine scale
 
@@ -62,8 +64,8 @@ FVector2D USnowInteractorComponent::GetHoleUvScale(float SizeInCM, FVector2D Tar
 	FVector2D uvA;
 	FVector2D uvB;
 		
-	UGameplayStatics::FindCollisionUV(hitA, 0, uvA);
-	UGameplayStatics::FindCollisionUV(hitB, 0, uvB);
+	UGameplayStatics::FindCollisionUV(hitA, UvChannel, uvA);
+	UGameplayStatics::FindCollisionUV(hitB, UvChannel, uvB);
 
 	FVector2D uvDiffA = uvA - TargetUVLocation;
 	FVector2D uvDiffB = uvB - TargetUVLocation;
@@ -93,7 +95,7 @@ FVector2D USnowInteractorComponent::GetHoleUvScale(float SizeInCM, FVector2D Tar
 		correctedA.Y = correctedA.Y * uScale;
 		finalScale.Y = (1.f / uScale);
 	}
-
+	
 	float overallScale = (SizeInCM / SCALE_FIXED_DISTANCE) * correctedA.Size();
 	finalScale *= overallScale;
 
@@ -114,7 +116,14 @@ UInteractiveSnowComponent* USnowInteractorComponent::GetSnowComponentUnderParent
 
 	if (GetWorld()->LineTraceSingleByChannel(Hit, start, end, ECollisionChannel::ECC_Visibility, params)) {
 		foundComponent = Cast<UInteractiveSnowComponent>(Hit.Actor->GetComponentByClass(UInteractiveSnowComponent::StaticClass()));
-		UGameplayStatics::FindCollisionUV(Hit, 0, OutUVs);
+
+		int32 uvChannel = 0;
+		if (foundComponent)
+		{
+			uvChannel = foundComponent->GetUsedUvChannel();
+		}
+
+		UGameplayStatics::FindCollisionUV(Hit, uvChannel, OutUVs);
 	}
 
 	return foundComponent;
