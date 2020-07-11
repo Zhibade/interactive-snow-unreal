@@ -25,10 +25,11 @@ public:
 	* @param UVs - UV location of the hole
 	* @param ShapeTexture - Texture to use when drawing
 	* @param TextureScale - Scale value to apply when drawing on the texture
+	* @param TextureRotation - Rotation value to apply when drawing on the texture (0-1 matches 0-360 rotation) (Assumes that the top part of the image is the X+ axis)
 	* @param bIsMainPlayer - Indicates whether this is the main player/object or not (only relevant when it is set as infinite)
 	*/
 	UFUNCTION(BlueprintCallable)
-	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, bool bIsMainPlayer = false);
+	void DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, float TextureRotation, bool bIsMainPlayer = false);
 
 	/**
 	* Returns the used UV channel for this snow component

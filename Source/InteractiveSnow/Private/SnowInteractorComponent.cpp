@@ -8,6 +8,7 @@
 
 
 constexpr float SCALE_FIXED_DISTANCE = 1.f; // 1 CM
+const FVector2D WORLD_FORWARD_AXIS_2D = FVector2D(1.f, 0.f);
 
 
 USnowInteractorComponent::USnowInteractorComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -32,7 +33,9 @@ void USnowInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		int32 uvChannel = snowComponent->GetUsedUvChannel();
 
 		FVector2D uvScale = GetHoleUvScale(HoleSize, hitUVs, uvChannel, hit);
-		snowComponent->DrawMaterial(hitUVs, HoleTexture, uvScale, bIsActivePlayer);
+		float uvRotation = GetHoleRotation();
+
+		snowComponent->DrawMaterial(hitUVs, HoleTexture, uvScale, uvRotation, bIsActivePlayer);
 
 		LastLocation = currentLocation;
 	}
@@ -41,6 +44,24 @@ void USnowInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 void USnowInteractorComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+float USnowInteractorComponent::GetHoleRotation() const
+{
+	FVector forwardAxis = GetOwner()->GetActorForwardVector();
+	FVector2D forwardAxis2d = FVector2D(forwardAxis.X, forwardAxis.Y);
+	forwardAxis2d.Normalize();
+
+	float angleInRad = FMath::Acos(FVector2D::DotProduct(WORLD_FORWARD_AXIS_2D, forwardAxis2d));
+	float rotation = angleInRad / (2.f * PI);
+
+	// Rotation value only goes from 0 to 0.5 even when going counter-clockwise, need to differentiate values from 0.5 to 1.0 to include the full 360 rotation
+	if (forwardAxis2d.Y < 0.f)
+	{
+		rotation = (0.5f - rotation) + 0.5f;
+	}
+
+	return rotation;
 }
 
 FVector2D USnowInteractorComponent::GetHoleUvScale(float SizeInCM, FVector2D TargetUVLocation, int32 UvChannel, const FHitResult& Hit) const

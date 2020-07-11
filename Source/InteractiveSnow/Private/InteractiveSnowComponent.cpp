@@ -8,6 +8,7 @@
 const FName LOCATION_PARAMETER_NAME = "UV Location";
 const FName SCALE_X_PARAMETER_NAME = "Scale X";
 const FName SCALE_Y_PARAMETER_NAME = "Scale Y";
+const FName ROTATION_PARAMETER_NAME = "Rotation";
 const FName PREV_OFFSET_X_PARAMETER_NAME = "Previous Texture Offset X";
 const FName PREV_OFFSET_Y_PARAMETER_NAME = "Previous Texture Offset Y";
 const FName RENDER_TARGET_PARAMETER_NAME = "Displacement Map";
@@ -21,7 +22,7 @@ UInteractiveSnowComponent::UInteractiveSnowComponent(const FObjectInitializer& O
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, bool bIsMainPlayer)
+void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, float TextureRotation, bool bIsMainPlayer)
 {
 	// General setup and checks
 
@@ -93,6 +94,7 @@ void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTex
 
 	DrawMaterialInstance->SetScalarParameterValue(SCALE_X_PARAMETER_NAME, drawMaterialScale.X);
 	DrawMaterialInstance->SetScalarParameterValue(SCALE_Y_PARAMETER_NAME, drawMaterialScale.Y);
+	DrawMaterialInstance->SetScalarParameterValue(ROTATION_PARAMETER_NAME, TextureRotation);
 
 	// Draw on render targets
 

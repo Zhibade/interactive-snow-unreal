@@ -50,6 +50,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	/**
+	* Gets the rotation value to be used when drawing the material on the surface component.
+	*
+	* @return Rotation value as 0-1 (0 = 0 deg, 1 = 360 deg) (0 deg = Object X axis is aligned with world X axis)
+	*/
+	UFUNCTION(BlueprintCallable)
+	float GetHoleRotation() const;
+
+	/**
 	* Gets the corresponding UV scale to be used when drawing the material on the surface component.
 	*
 	* @param SizeInCM - Desired size of the hole texture in CM
