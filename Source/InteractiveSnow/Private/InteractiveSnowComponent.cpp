@@ -16,10 +16,26 @@ const FName RENDER_TARGET_PARAMETER_NAME = "Displacement Map";
 const FString NAME_SEPARATOR = TEXT("_");
 const FString WARNING_HEADER = TEXT("WARNING :: [Interactive Snow Component] ::");
 
+const TCHAR* DEFAULT_DRAW_MATERIAL = TEXT("Material'/Game/Materials/RenderTargetDrawing/M_DepthPainter.M_DepthPainter'");
+const TCHAR* DEFAULT_COPY_MATERIAL = TEXT("Material'/Game/Materials/RenderTargetDrawing/M_TextureCopy.M_TextureCopy'");
+
 
 UInteractiveSnowComponent::UInteractiveSnowComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> defaultDrawMaterial(DEFAULT_DRAW_MATERIAL);
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> defaultCopyMaterial(DEFAULT_COPY_MATERIAL);
+
+	if (defaultDrawMaterial.Object)
+	{
+		RenderTargetDrawMaterial = defaultDrawMaterial.Object;
+	}
+
+	if (defaultCopyMaterial.Object)
+	{
+		RenderTargetCopyMaterial = defaultCopyMaterial.Object;
+	}
 }
 
 void UInteractiveSnowComponent::DrawMaterial(FVector2D UVs, UTexture2D* ShapeTexture, FVector2D TextureScale, float TextureRotation, bool bIsMainPlayer)
