@@ -87,18 +87,22 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float InfiniteSurfaceRenderArea = 2000.f;
 
+	// Base material to use for the surface/object
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* BaseMaterial = nullptr;
 
+	// Material used when copying render targets. NOTE: Please don't change this unless you 100% understand what this is doing.
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* RenderTargetCopyMaterial = nullptr;
 
+	// Material used when drawing to displacement render targets. NOTE: Please don't change this unless you 100% understand what this is doing.
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* RenderTargetDrawMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere)
 	int32 RenderTargetResolution = 1024;
 
+	// UV channel to use for the snow displacement
 	UPROPERTY(EditAnywhere)
 	int32 UvChannel = 0;
 

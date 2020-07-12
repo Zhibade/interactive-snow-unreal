@@ -29,18 +29,22 @@ protected:
 
 	// --- EXPOSED PROPERTIES --- //
 
+	// Used on infinite surfaces only. Please make sure only one interactor component has this set to true.
 	UPROPERTY(EditAnywhere)
 	bool bIsActivePlayer = false;
 
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0", UIMax = "10"))
 	float TickInterval = 0.05f;
 
+	// Max distance to check from the pivot of the owner actor to the surface at the bottom (-Z)
 	UPROPERTY(EditAnywhere, meta = (UIMin = "1", UIMax = "100000"))
-	float MaxDistance = 70.f; // Max distance to check from the pivot of the owner actor
+	float MaxDistance = 70.f;
 
+	// Hole size in centimeters. E.g a hole size of 100 CM means the entire hole texture is 100 CM, not just the white area.
 	UPROPERTY(EditAnywhere, meta = (UIMin = "0", UIMax = "10"))
-	float HoleSize = 100.f; // Scale in CM
+	float HoleSize = 100.f;
 
+	// Hole texture to use when displacing snow. White value is the hole shape.
 	UPROPERTY(EditAnywhere)
 	UTexture2D* HoleTexture;
 
